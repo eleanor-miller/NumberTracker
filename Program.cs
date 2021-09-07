@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace NumberTracker
 {
@@ -10,16 +14,35 @@ namespace NumberTracker
         {
             Console.WriteLine("Welcome to Number Tracker");
 
-            // - Create an empty list of numbers.
-            var numbers = new List<int>();
+            //var fileReader = new StreamReader("numbers.csv");
+            // Generic reader that can be a StreamReader *OR* a String Reader
+            TextReader reader;
 
-            // Controls if we are still running our loop asking for more numbers
+            // If the file exists
+            if (File.Exists("numbers.csv"))
+            {
+                // Assign a StreamReader to read from the file
+                reader = new StreamReader("numbers.csv");
+            }
+            else
+            {
+                // Assign a StringReader to read from an empty string
+                reader = new StringReader("");
+            }
+
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                HasHeaderRecord = false,
+            };
+
+            var csvReader = new CsvReader(reader, config);
+
+            var numbers = csvReader.GetRecords<int>().ToList();
+
             var isRunning = true;
 
-            // While we are running
             while (isRunning)
             {
-                // Show the list of numbers
                 Console.WriteLine("------------------");
                 foreach (var number in numbers)
                 {
@@ -27,23 +50,29 @@ namespace NumberTracker
                 }
                 Console.WriteLine($"Our list has: {numbers.Count()} entries");
                 Console.WriteLine("------------------");
-
-                // Ask for a new number or the word quit to end
                 Console.Write("Enter a number to store, or 'quit' to end: ");
                 var input = Console.ReadLine().ToLower();
 
                 if (input == "quit")
                 {
-                    // If the input is quit, turn off the flag to keep looping
                     isRunning = false;
                 }
                 else
                 {
-                    // Parse the number and add it to the list of numbers
                     var number = int.Parse(input);
                     numbers.Add(number);
                 }
             }
+
+            var fileWriter = new StreamWriter("numbers.csv");
+
+            var csvWriter = new CsvWriter(fileWriter, CultureInfo.InvariantCulture);
+
+            csvWriter.WriteRecords(numbers);
+
+            fileWriter.Close();
+
+
         }
     }
 }
